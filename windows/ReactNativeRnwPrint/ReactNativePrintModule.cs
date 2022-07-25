@@ -8,7 +8,7 @@ using Microsoft.ReactNative.Managed;
 
 namespace ReactNativeRnwPrint
 {
-    [ReactModule("ReactNativeRnwPrint")]
+    [ReactModule("RnwPrint")]
     internal sealed class ReactNativePrintModule
     {
         // See https://microsoft.github.io/react-native-windows/docs/native-modules for details on writing native modules
@@ -51,7 +51,7 @@ namespace ReactNativeRnwPrint
         {
             try
             {
-                streamToPrint = new StreamReader(filePath);
+                streamToPrint = new StreamReader($@"{filePath}");
                 try
                 {
                     printFont = new Font("Arial", 14);
