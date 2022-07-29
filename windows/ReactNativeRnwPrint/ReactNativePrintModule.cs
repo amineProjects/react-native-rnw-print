@@ -1,74 +1,51 @@
-﻿using System;
-using System.IO;
-using System.Drawing;
-using System.Drawing.Printing;
+﻿using Windows.ApplicationModel;
+using Windows.ApplicationModel.AppService;
+using Windows.Foundation.Collections;
 
 using Microsoft.ReactNative;
 using Microsoft.ReactNative.Managed;
+using System.Threading.Tasks;
+using System;
 
 namespace ReactNativeRnwPrint
 {
     [ReactModule("RnwPrint")]
     internal sealed class ReactNativePrintModule
     {
-        // See https://microsoft.github.io/react-native-windows/docs/native-modules for details on writing native modules
-        private Font printFont;
-        private StreamReader streamToPrint;
+        private ReactContext _reactContext;
 
-        // The PrintPage event is raised for each page to be printed.
-        private void pd_PrintPage(object sender, PrintPageEventArgs ev)
+        [ReactInitializer]
+        public void Initialize(ReactContext reactContext)
         {
-            float linesPerPage = 0;
-            float yPos = 0;
-            int count = 0;
-            float leftMargin = ev.MarginBounds.Left;
-            float topMargin = ev.MarginBounds.Top;
-            String line = null;
-
-            // Calculate the number of lines per page.
-            linesPerPage = ev.MarginBounds.Height /
-               printFont.GetHeight(ev.Graphics);
-
-            // Iterate over the file, printing each line.
-            while (count < linesPerPage &&
-               ((line = streamToPrint.ReadLine()) != null))
-            {
-                yPos = topMargin + (count * printFont.GetHeight(ev.Graphics));
-                ev.Graphics.DrawString(line, printFont, Brushes.Black,
-                   leftMargin, yPos, new StringFormat());
-                count++;
-            }
-
-            // If more lines exist, print another page.
-            if (line != null)
-                ev.HasMorePages = true;
-            else
-                ev.HasMorePages = false;
+            _reactContext = reactContext;
         }
 
-        [ReactMethod("print")]
-        public void Printing(string filePath)
+        [ReactMethod("launchFullTrustProcess")]
+        public async Task LaunchFullTrustProcessAsync()
         {
-            try
+            await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+        }
+
+
+        [ReactMethod("print")]
+        public async Task<string> GetRegistryKey(string filePath)
+        {
+            var ns = ReactPropertyBagHelper.GetNamespace("RegistryChannel");
+            var name = ReactPropertyBagHelper.GetName(ns, "AppServiceConnection");
+
+            var content = _reactContext.Handle.Properties.Get(name);
+
+            var _connection = content as AppServiceConnection;
+
+            ValueSet valueSet = new ValueSet
             {
-                streamToPrint = new StreamReader($@"{filePath}");
-                try
-                {
-                    printFont = new Font("Arial", 14);
-                    PrintDocument pd = new PrintDocument();
-                    pd.PrintPage += new PrintPageEventHandler(pd_PrintPage);
-                    // Print the document.
-                    pd.Print();
-                }
-                finally
-                {
-                    streamToPrint.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+                { "filePath", filePath }
+            };
+
+            var result = await _connection.SendMessageAsync(valueSet);
+
+            string message = result.Message["PrintingStatus"].ToString();
+            return message;
         }
     }
 }
