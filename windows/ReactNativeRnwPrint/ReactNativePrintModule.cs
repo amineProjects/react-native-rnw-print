@@ -30,7 +30,7 @@ namespace ReactNativeRnwPrint
         [ReactMethod("print")]
         public async Task<string> GetRegistryKey(string filePath)
         {
-            var ns = ReactPropertyBagHelper.GetNamespace("RegistryChannel");
+            var ns = ReactPropertyBagHelper.GetNamespace("PrintingService");
             var name = ReactPropertyBagHelper.GetName(ns, "AppServiceConnection");
 
             var content = _reactContext.Handle.Properties.Get(name);
